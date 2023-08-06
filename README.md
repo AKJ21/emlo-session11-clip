@@ -51,9 +51,9 @@ You may scale up number of services/container in your load balancer and see the 
 ## FastAPI Test
 Note: You need to provide multiple texts separated by comma (,) and an image.
 
-![FastAPI-Testing](FastAPITest.png)
+![FastAPI-Testing](./FastAPI/FastAPITest.png)
 
-![FastAPI-Response](FastAPIResponse.png)
+![FastAPI-Response](./FastAPI/FastAPIResponse.png)
 
 ## Group Members
 - Aman Jaipuria
