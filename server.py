@@ -2,8 +2,8 @@ import torch
 import io
 
 import numpy as np
-
-from fastapi import FastAPI
+from typing import Annotated
+from fastapi import FastAPI, File
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 from transformers import CLIPProcessor, CLIPModel
@@ -26,21 +26,23 @@ processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 async def predict(file: Annotated[bytes, File()], text: str):
     img = Image.open(io.BytesIO(file))
     img = img.convert("RGB")
-    img_np = np.array(img)
+    list_of_texts = text.split(", ")
 
-    # print(f"shape = {img_np.shape}")
+    input_text = processor(list_of_texts, return_tensors="pt", padding=True)
+    input_image = processor(images=img, return_tensors="pt", padding=True)
 
-    inputs = processor(text=text, images=img_np, return_tensors="pt", padding=True)
+    text_features = model.get_text_features(**input_text)
+    img_features = model.get_image_features(**input_image)
 
+    image_embeds = img_features / img_features.norm(p=2, dim=-1, keepdim=True)
+    text_embeds = text_features / text_features.norm(p=2, dim=-1, keepdim=True)
+    
     with torch.no_grad():
-        outputs = model(**inputs)
-        logits_per_image = outputs.logits_per_image # this is the image-text similarity score
-        probs = logits_per_image.softmax(dim=1)[0].numpy() # we can take the softmax to get the label probabilities
-        dic={}
-        for i in range(len(text)):
-            dic[text[i]] = round(probs[i],2)
+        logit_scale = model.logit_scale.exp()
+        logits_per_image = torch.matmul(image_embeds, text_embeds.t()) * logit_scale
+        probs = logits_per_image.softmax(dim=1).squeeze(0).tolist() # we can take the softmax to get the label probabilities
 
-    return dic
+    return {list_of_texts[i]: round(probs[i],2) for i in range(len(list_of_texts))}
 
 @app.get("/health")
 async def health():

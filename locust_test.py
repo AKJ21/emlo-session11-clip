@@ -7,6 +7,6 @@ class StressTest(HttpUser):
 
     @task(1)
     def test_text_endpoint(self):
-        files = {'file': open('http://images.cocodataset.org/val2017/000000039769.jpg', 'rb')}
+        files = {'file': open('catdog.jpg', 'rb')}
         
-        response = self.client.post("/predict?text=['a photo of a cat', 'a photo of a dog', 'a photo of a lion']", files=files)
+        response = self.client.post("/predict?text=a photo of a cat, a photo of a dog, a photo of a lion", files=files)
